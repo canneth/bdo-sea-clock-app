@@ -77,7 +77,6 @@ class MainActivity : AppCompatActivity() {
             override fun run() {
                 try {
                     while (!this.isInterrupted) {
-                        sleep(1000) // Run loop every 1 second
                         runOnUiThread {
                             // Grab time from phone
                             val current_real_time = LocalDateTime.now()
@@ -115,6 +114,7 @@ class MainActivity : AppCompatActivity() {
                             // Display formatted current_bdo_time
                             bdo_time.text = current_bdo_time.format(time_formatter)
                         }
+                        sleep(1000) // Run loop every 1 second
                     }
                 } catch (e: InterruptedException) {
                     onDestroy()
