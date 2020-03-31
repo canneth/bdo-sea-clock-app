@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">BDOSEAtime</string>
     <string name="action_settings">Settings</string>
+
+    <string name="day_notif_body">
+        It is %1$s now in BDO SEA
+		&lt;br/>Night falls in %2$d mins %3$d s (real time)
+		&lt;br/>You will have recovered &amp;#x1F4AA %4$d energy by then
+    </string>
+    <string name="night_notif_body">
+        It is %1$s now in BDO SEA
+		&lt;br/>Day breaks in %2$d mins %3$d s (real time)
+		&lt;br/>You will have recovered &amp;#x1F4AA %4$d energy by then
+    </string>
 </resources>

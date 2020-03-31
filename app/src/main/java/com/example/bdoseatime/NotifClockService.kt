@@ -4,19 +4,26 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Build
 import android.os.IBinder
+import android.text.Html
+import android.text.Html.FROM_HTML_MODE_LEGACY
+import android.text.Spanned
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import java.lang.Math.ceil
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlin.math.floor
 
 class NotifClockService : Service() {
 
@@ -85,6 +92,7 @@ class NotifClockService : Service() {
 		val pending_intent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
 
 		val bdo_day_time = LocalDateTime.of(1, 1, 1, 7, 0, 0)
+		val bdo_next_day_time = LocalDateTime.of(1, 1, 2, 7, 0, 0)
 		val bdo_night_time = LocalDateTime.of(1, 1, 1, 22, 0, 0)
 		val bdo_midnight_time = LocalDateTime.of(1, 1, 2, 0, 0, 0)
 
@@ -102,14 +110,14 @@ class NotifClockService : Service() {
 		// Set reference_bdo_time to 0700 BDO
 		val reference_bdo_time = bdo_day_time
 
+		val shared_pref = getSharedPreferences("shared_pref", Context.MODE_PRIVATE)
+
 		val DAY = true
 		val NIGHT = false
-		var last_state = DAY
-
-		var flip_flop = true
 
 		val runnable = Runnable {
 			while(true) {
+				val last_state = shared_pref.getBoolean("last_state", DAY)
 				// Grab time from phone
 				val current_real_time = LocalDateTime.now()
 				// Format time
@@ -132,7 +140,8 @@ class NotifClockService : Service() {
 						current_bdo_time = reference_bdo_time.plusSeconds((remainder * 15 * 60 / 200))
 						if (last_state == NIGHT) {
 							// Build notification
-							builder_periodic.setContentTitle("It's a new day!")
+							val sun_emoji = String(Character.toChars(0x2600));
+							builder_periodic.setContentTitle("$sun_emoji  It's a new day!")
 							builder_periodic.setSmallIcon(R.mipmap.ic_launcher_round)
 							builder_periodic.setContentIntent(pending_intent)
 							builder_periodic.setOnlyAlertOnce(true)
@@ -140,10 +149,19 @@ class NotifClockService : Service() {
 							// Send notification
 							notification_manager.notify(2, builder_periodic.build())
 						} else {
-							builder.setContentTitle("Day Time (^ _ ^ )")
+							val sun_emoji = String(Character.toChars(0x2600));
+							builder.setContentTitle("$sun_emoji  Day Time")
 							// Build notification
 							val formatted_current_bdo_time = current_bdo_time.format(time_formatter)
+							val real_seconds_to_bdo_night = timeSpanInSeconds(current_bdo_time, bdo_night_time)/(15*60/200.0)
+							val real_minutes_to_bdo_night = floor(real_seconds_to_bdo_night/60.0)
+							val real_remainder_seconds_to_bdo_night = floor(real_seconds_to_bdo_night%60.0)
+							val recoverable_energy = floor(real_minutes_to_bdo_night/3)
+							val body: String = getString(R.string.day_notif_body, formatted_current_bdo_time, real_minutes_to_bdo_night.toInt(), real_remainder_seconds_to_bdo_night.toInt(), recoverable_energy.toInt())
+							val styled_body: Spanned = Html.fromHtml(body, FROM_HTML_MODE_LEGACY)
 							builder.setContentText("It is $formatted_current_bdo_time now in BDO SEA")
+								.setStyle(NotificationCompat.BigTextStyle()
+									.bigText(styled_body))
 							builder.setSmallIcon(R.mipmap.ic_launcher_round)
 							builder.setContentIntent(pending_intent)
 							builder.setOngoing(true)
@@ -151,14 +169,17 @@ class NotifClockService : Service() {
 							// Send notification
 							startForeground(1, builder.build())
 						}
-						last_state = DAY
+						shared_pref.edit().apply {
+							putBoolean("last_state", DAY)
+						}.apply()
 					} else if (remainder >= 200 * 60) {
 						// Night time
 						// Calculate current_bdo_time
 						current_bdo_time = bdo_night_time.plusSeconds(((remainder - 200 * 60) * 9 * 60 / 40))
 						if (last_state == DAY) {
 							// Build notification
-							builder_periodic.setContentTitle("Night has fallen!")
+							val moon_emoji = String(Character.toChars(0x1F319))
+							builder_periodic.setContentTitle("$moon_emoji  Night has fallen!")
 							builder_periodic.setSmallIcon(R.mipmap.ic_launcher_round)
 							builder_periodic.setContentIntent(pending_intent)
 							builder_periodic.setOnlyAlertOnce(true)
@@ -167,9 +188,18 @@ class NotifClockService : Service() {
 							notification_manager.notify(2, builder_periodic.build())
 						} else {
 							// Build notification
-							builder.setContentTitle("Night Time (u _ u )")
+							val moon_emoji = String(Character.toChars(0x1F319))
+							builder.setContentTitle("$moon_emoji  Night Time")
 							val formatted_current_bdo_time = current_bdo_time.format(time_formatter)
+							val real_seconds_to_bdo_day = timeSpanInSeconds(current_bdo_time, bdo_next_day_time)/(9*60/45)
+							val real_minutes_to_bdo_day = floor(real_seconds_to_bdo_day/60.0)
+							val real_remainder_seconds_to_bdo_day = floor(real_seconds_to_bdo_day%60.0)
+							val recoverable_energy = floor(real_minutes_to_bdo_day/3)
+							val body: String = getString(R.string.night_notif_body, formatted_current_bdo_time, real_minutes_to_bdo_day.toInt(), real_remainder_seconds_to_bdo_day.toInt(), recoverable_energy.toInt())
+							val styled_body: Spanned = Html.fromHtml(body, FROM_HTML_MODE_LEGACY)
 							builder.setContentText("It is $formatted_current_bdo_time now in BDO SEA")
+								.setStyle(NotificationCompat.BigTextStyle()
+									.bigText(styled_body))
 							builder.setSmallIcon(R.mipmap.ic_launcher_round)
 							builder.setContentIntent(pending_intent)
 							builder.setOngoing(true)
@@ -177,7 +207,9 @@ class NotifClockService : Service() {
 							// Send notification
 							startForeground(1, builder.build())
 						}
-						last_state = NIGHT
+						shared_pref.edit().apply {
+							putBoolean("last_state", NIGHT)
+						}.apply()
 					}
 				}
 				Thread.sleep(1000)
