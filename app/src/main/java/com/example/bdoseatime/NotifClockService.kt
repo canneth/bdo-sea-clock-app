@@ -63,7 +63,7 @@ class NotifClockService : Service() {
 
 		// Create service (main) notification channel for the persistent notification indicating app running in foreground
 		notification_manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-		val channel_id = "com.example.bdoseatime"
+		val channel_id = "com.bdoseatime_main_notif"
 		val channel_name = "main_notif_channel"
 		val channel_description = "main_notif_description"
 		val channel_importance = NotificationManager.IMPORTANCE_HIGH
@@ -72,21 +72,23 @@ class NotifClockService : Service() {
 		channel.enableVibration(false)
 		channel.enableLights(false)
 		// Create periodic notification channel for notifications upon day/night transitions in BDO
-		val channel_periodic_id = "com.example.bdoseatime_periodic"
+		val channel_periodic_id = "com.bdoseatime_periodic_notif"
 		val channel_periodic_name = "periodic_notif_channel"
-		val channel_periodic_description = "main_notif_description"
+		val channel_periodic_description = "periodic_notif_description"
 		val channel_periodic_importance = NotificationManager.IMPORTANCE_HIGH
 		val channel_periodic = NotificationChannel(channel_periodic_id, channel_periodic_name, channel_periodic_importance)
-		channel.description = channel_description
-		channel.enableVibration(true)
-		channel.enableLights(true)
-		channel.lightColor = Color.CYAN
+		channel_periodic.description = channel_periodic_description
+		channel_periodic.enableVibration(true)
+		channel_periodic.enableLights(true)
+		channel_periodic.lightColor = Color.CYAN
 		// Register channels with manager
 		notification_manager.createNotificationChannel(channel)
 		notification_manager.createNotificationChannel(channel_periodic)
 		// Create builder for the channels
 		val builder = NotificationCompat.Builder(this, channel_id)
 		val builder_periodic = NotificationCompat.Builder(this, channel_periodic_id)
+		builder.setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+		builder_periodic.setColor(ContextCompat.getColor(this, R.color.colorPrimary))
 		// Intents for notifications
 		val intent = Intent(applicationContext, MainActivity::class.java)
 		val pending_intent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
@@ -139,16 +141,18 @@ class NotifClockService : Service() {
 						// Calculate current_bdo_time
 						current_bdo_time = reference_bdo_time.plusSeconds((remainder * 15 * 60 / 200))
 						if (last_state == NIGHT) {
+							// Periodic notification
 							// Build notification
 							val sun_emoji = String(Character.toChars(0x2600));
 							builder_periodic.setContentTitle("$sun_emoji  It's a new day!")
-							builder_periodic.setSmallIcon(R.mipmap.ic_launcher_round)
+							builder_periodic.setSmallIcon(R.drawable.ic_bdo_sea_clock)
 							builder_periodic.setContentIntent(pending_intent)
 							builder_periodic.setOnlyAlertOnce(true)
 							builder_periodic.setAutoCancel(true)
 							// Send notification
 							notification_manager.notify(2, builder_periodic.build())
 						} else {
+							// Persistent notification
 							val sun_emoji = String(Character.toChars(0x2600));
 							builder.setContentTitle("$sun_emoji  Day Time")
 							// Build notification
@@ -163,7 +167,7 @@ class NotifClockService : Service() {
 							builder.setContentText("It is $formatted_current_bdo_time now in BDO SEA")
 								.setStyle(NotificationCompat.BigTextStyle()
 									.bigText(styled_body))
-							builder.setSmallIcon(R.mipmap.ic_launcher_round)
+							builder.setSmallIcon(R.drawable.ic_bdo_sea_clock)
 							builder.setContentIntent(pending_intent)
 							builder.setOngoing(true)
 							builder.setOnlyAlertOnce(true)
@@ -178,16 +182,18 @@ class NotifClockService : Service() {
 						// Calculate current_bdo_time
 						current_bdo_time = bdo_night_time.plusSeconds(((remainder - 200 * 60) * 9 * 60 / 40))
 						if (last_state == DAY) {
+							// Peroidic notification
 							// Build notification
 							val moon_emoji = String(Character.toChars(0x1F319))
 							builder_periodic.setContentTitle("$moon_emoji  Night has fallen!")
-							builder_periodic.setSmallIcon(R.mipmap.ic_launcher_round)
+							builder_periodic.setSmallIcon(R.drawable.ic_bdo_sea_clock)
 							builder_periodic.setContentIntent(pending_intent)
 							builder_periodic.setOnlyAlertOnce(true)
 							builder_periodic.setAutoCancel(true)
 							// Send notification
 							notification_manager.notify(2, builder_periodic.build())
 						} else {
+							// Persistent notification
 							// Build notification
 							val moon_emoji = String(Character.toChars(0x1F319))
 							builder.setContentTitle("$moon_emoji  Night Time")
@@ -202,7 +208,7 @@ class NotifClockService : Service() {
 							builder.setContentText("It is $formatted_current_bdo_time now in BDO SEA")
 								.setStyle(NotificationCompat.BigTextStyle()
 									.bigText(styled_body))
-							builder.setSmallIcon(R.mipmap.ic_launcher_round)
+							builder.setSmallIcon(R.drawable.ic_bdo_sea_clock)
 							builder.setContentIntent(pending_intent)
 							builder.setOngoing(true)
 							builder.setOnlyAlertOnce(true)

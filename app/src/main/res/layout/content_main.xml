@@ -15,7 +15,6 @@
         tools:layout_editor_absoluteX="-196dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/bdo_time_section"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"

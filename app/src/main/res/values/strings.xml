@@ -1,6 +1,5 @@
 <resources>
-    <string name="app_name">BDOSEAtime</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_name">BDO Clock</string>
 
     <string name="day_notif_body">
         It is %1$s now in BDO SEA
